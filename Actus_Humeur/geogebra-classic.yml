@@ -1,0 +1,38 @@
+---
+
+- name: Installation de Geogebra-classic
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+
+  vars:
+    - apt_file: /etc/apt/sources.list.d/geogebra-classic.list
+
+  tasks:
+    - name: Vérification de l'existence du fichier {{apt_file}}
+      command: test -f {{apt_file}}
+      register: geogebra_apt_exists
+      ignore_errors: True
+
+    - name: Ajout de la clé pour Geogebra Classic
+      shell: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C072A32983A736CF
+      when: geogebra_apt_exists.rc == 1
+
+    - name: Ajout du dépôt pour Geogebra Classic
+      copy:
+          content: "deb http://www.geogebra.net/linux/ stable main"
+          dest: "{{apt_file}}"
+          owner: root
+          group: root
+          mode: 644
+      when: geogebra_apt_exists.rc == 1
+
+    - name: Mise à jour d'apt
+      apt:
+          update_cache: yes
+      when: geogebra_apt_exists.rc == 1
+
+    - name: Installation de Geogebra Classic
+      apt:
+          pkg: geogebra-classic
+          state: installed

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly DIR_SOUNDS='/home/login/bin/data/sonorize'
+
+
+usage() {
+    if [ "${1}" == "help" ]; then
+        echo 'Usage: sonorize <category> <type> | listCategories | listTypes <category>'
+        echo "       1. Joue aléatoirement un son pris dans ${DIR_SOUNDS}/<category>/<type>"
+        echo '       - <category> : Catégorie de sons (human, bot, etc.)'
+        echo '       - <type> : Type de son (warning, error, etc.)'
+        echo '       2. Liste les catégories de sons disponibles'
+        echo '       3. Liste les types disponibles pour une <category> donnée'
+        exit 0
+    fi
+}
+
+# On joue ${DIR_SOUNDS}/${1}/${2}/${2}_1.wav
+# ${1} : catégorie du son
+# ${2} : type de son
+playSound() {
+    baseFilename=${2}"_"
+    nbFiles="$(ls ${DIR_SOUNDS}/${1}/${2} | wc -l)"
+    alea=$((RANDOM % ${nbFiles} + 1))
+    filename=${DIR_SOUNDS}/${1}/${2}/${baseFilename}${alea}".wav"
+    aplay -d 1 ${filename} > /dev/null 2>&1
+    exit 0
+}
+
+listCategories() {
+    local directories="$(ls ${DIR_SOUNDS})"
+    echo "Catégories disponibles :"
+    for category in ${directories[@]}; do
+        echo "- ${category}"
+    done
+    exit 0
+}
+
+# On joue affiche la liste des types disponibles pour ${1}
+# ${1} : catégorie du son
+listTypes() {
+    local directories="$(ls ${DIR_SOUNDS}/${1})"
+    echo "Types disponibles pour la catégorie ${1} (nombre de sons différents) :"
+    for type in ${directories[@]}; do
+        local n="$(ls ${DIR_SOUNDS}/${1}/${type}/* | wc -l)"
+        echo "- ${type} (${n})"
+    done
+    exit 0
+}
+
+
+if [ "${#}" == 2 ]; then
+    if [ "${1}" == 'listTypes' ]; then
+        listTypes ${2}
+    else
+        playSound ${1} ${2}
+    fi
+elif [ "${#}" == 1 ] && [ "${1}" == 'listCategories' ]; then
+    listCategories
+else
+    usage 'help'
+fi
